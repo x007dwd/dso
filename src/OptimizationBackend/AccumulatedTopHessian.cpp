@@ -183,7 +183,8 @@ void AccumulatedTopHessianSSE::addPoint(
     if (mode == 2)
       resApprox = r->res_toZeroF;
     if (mode == 1) {
-      // compute Jp*delta
+// compute Jp*delta
+#ifdef USE_SSE
       __m128 Jp_delta_x = _mm_set1_ps(rJ->Jpdxi[0].dot(dp.head<6>()) +
                                       rJ->Jpdc[0].dot(dc) + rJ->Jpdd[0] * dd);
       __m128 Jp_delta_y = _mm_set1_ps(rJ->Jpdxi[1].dot(dp.head<6>()) +
@@ -206,6 +207,24 @@ void AccumulatedTopHessianSSE::addPoint(
             _mm_mul_ps(_mm_load_ps(((float *)(rJ->JabF + 1)) + i), delta_b));
         _mm_store_ps(((float *)&resApprox) + i, rtz);
       }
+#else
+      float Jp_delta_x = rJ->Jpdxi[0].dot(dp.head<6>()) + rJ->Jpdc[0].dot(dc) +
+                         rJ->Jpdd[0] * dd;
+      float Jp_delta_y = rJ->Jpdxi[1].dot(dp.head<6>()) + rJ->Jpdc[1].dot(dc) +
+                         rJ->Jpdd[1] * dd;
+      float delta_a = dp[6];
+      float delta_b = dp[7];
+
+      for (int i = 0; i < patternNum; i++) {
+        // PATTERN: rtz = resF - [JI*Jp Ja]*delta.
+        float rtz = r->res_toZeroF[i];
+        rtz += rJ->JIdx[0][i] * Jp_delta_x;
+        rtz += rJ->JIdx[1][i] * Jp_delta_y;
+        rtz += rJ->JabF[0][i] * delta_a;
+        rtz += rJ->JabF[1][i] * delta_b;
+        resApprox[i] = rtz;
+      }
+#endif
     }
 
     // need to compute JI^T * r, and Jab^T * r. (both are 2-vectors).
