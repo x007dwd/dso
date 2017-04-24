@@ -298,53 +298,54 @@ void CoarseTracker::makeCoarseDepthL0(
   }
 }
 
-void CoarseTracker::calcGS(int lvl, Mat88 &H_out, Vec8 &b_out, SE3 refToNew,
-                           AffLight aff_g2l) {
-  acc.initialize();
+// void CoarseTracker::calcGS(int lvl, Mat88 &H_out, Vec8 &b_out, SE3 refToNew,
+//                            AffLight aff_g2l) {
+//   acc.initialize();
+//
+//   float fxl = fx[lvl];
+//   float fyl = fy[lvl];
+//   float b0 = lastRef_aff_g2l.b;
+//   float a = AffLight::fromToVecExposure(
+//       lastRef->ab_exposure, newFrame->ab_exposure, lastRef_aff_g2l,
+//       aff_g2l)[0];
+//
+//   int n = buf_warped_n;
+//   for (int i = 0; i < n; i++) {
+//     float dx = *(buf_warped_dx + i) * fxl;
+//     float dy = *(buf_warped_dy + i) * fyl;
+//     float u = *(buf_warped_u + i);
+//     float v = *(buf_warped_v + i);
+//     float id = *(buf_warped_idepth + i);
+//
+//     acc.updateSingle(id * dx, id * dy, -id * (u * dx + v * dy),
+//                      -(u * v * dx + dy * (1 + v * v)),
+//                      u * v * dy + dx * (1 + u * u), u * dy - v * dx,
+//                      a * (b0 - *(buf_warped_refColor + i)), -1,
+//                      *(buf_warped_residual + i), *(buf_warped_weight + i));
+//   }
+//
+//   acc.finish();
+//   H_out = acc.H.topLeftCorner<8, 8>().cast<double>() * (1.0f / n);
+//   b_out = acc.H.topRightCorner<8, 1>().cast<double>() * (1.0f / n);
+//
+//   H_out.block<8, 3>(0, 0) *= SCALE_XI_ROT;
+//   H_out.block<8, 3>(0, 3) *= SCALE_XI_TRANS;
+//   H_out.block<8, 1>(0, 6) *= SCALE_A;
+//   H_out.block<8, 1>(0, 7) *= SCALE_B;
+//   H_out.block<3, 8>(0, 0) *= SCALE_XI_ROT;
+//   H_out.block<3, 8>(3, 0) *= SCALE_XI_TRANS;
+//   H_out.block<1, 8>(6, 0) *= SCALE_A;
+//   H_out.block<1, 8>(7, 0) *= SCALE_B;
+//   b_out.segment<3>(0) *= SCALE_XI_ROT;
+//   b_out.segment<3>(3) *= SCALE_XI_TRANS;
+//   b_out.segment<1>(6) *= SCALE_A;
+//   b_out.segment<1>(7) *= SCALE_B;
+// }
 
-  float fxl = fx[lvl];
-  float fyl = fy[lvl];
-  float b0 = lastRef_aff_g2l.b;
-  float a = AffLight::fromToVecExposure(
-      lastRef->ab_exposure, newFrame->ab_exposure, lastRef_aff_g2l, aff_g2l)[0];
-
-  int n = buf_warped_n;
-  for (int i = 0; i < n; i++) {
-    float dx = *(buf_warped_dx + i) * fxl;
-    float dy = *(buf_warped_dy + i) * fyl;
-    float u = *(buf_warped_u + i);
-    float v = *(buf_warped_v + i);
-    float id = *(buf_warped_idepth + i);
-
-    acc.updateSingle(id * dx, id * dy, -id * (u * dx + v * dy),
-                     -(u * v * dx + dy * (1 + v * v)),
-                     u * v * dy + dx * (1 + u * u), u * dy - v * dx,
-                     a * (b0 - *(buf_warped_refColor + i)), -1,
-                     *(buf_warped_residual + i), *(buf_warped_weight + i));
-  }
-
-  acc.finish();
-  H_out = acc.H.topLeftCorner<8, 8>().cast<double>() * (1.0f / n);
-  b_out = acc.H.topRightCorner<8, 1>().cast<double>() * (1.0f / n);
-
-  H_out.block<8, 3>(0, 0) *= SCALE_XI_ROT;
-  H_out.block<8, 3>(0, 3) *= SCALE_XI_TRANS;
-  H_out.block<8, 1>(0, 6) *= SCALE_A;
-  H_out.block<8, 1>(0, 7) *= SCALE_B;
-  H_out.block<3, 8>(0, 0) *= SCALE_XI_ROT;
-  H_out.block<3, 8>(3, 0) *= SCALE_XI_TRANS;
-  H_out.block<1, 8>(6, 0) *= SCALE_A;
-  H_out.block<1, 8>(7, 0) *= SCALE_B;
-  b_out.segment<3>(0) *= SCALE_XI_ROT;
-  b_out.segment<3>(3) *= SCALE_XI_TRANS;
-  b_out.segment<1>(6) *= SCALE_A;
-  b_out.segment<1>(7) *= SCALE_B;
-}
-#if USE_SSE
 void CoarseTracker::calcGSSSE(int lvl, Mat88 &H_out, Vec8 &b_out, SE3 refToNew,
                               AffLight aff_g2l) {
   acc.initialize();
-
+#ifdef USE_SSE
   __m128 fxl = _mm_set1_ps(fx[lvl]);
   __m128 fyl = _mm_set1_ps(fy[lvl]);
   __m128 b0 = _mm_set1_ps(lastRef_aff_g2l.b);
@@ -380,7 +381,29 @@ void CoarseTracker::calcGSSSE(int lvl, Mat88 &H_out, Vec8 &b_out, SE3 refToNew,
         minusOne, _mm_load_ps(buf_warped_residual + i),
         _mm_load_ps(buf_warped_weight + i));
   }
+#else
+  float fxl = fx[lvl];
+  float fyl = fy[lvl];
+  float b0 = lastRef_aff_g2l.b;
+  float a = AffLight::fromToVecExposure(
+      lastRef->ab_exposure, newFrame->ab_exposure, lastRef_aff_g2l, aff_g2l)[0];
 
+  int n = buf_warped_n;
+  for (int i = 0; i < n; i++) {
+    float dx = *(buf_warped_dx + i) * fxl;
+    float dy = *(buf_warped_dy + i) * fyl;
+    float u = *(buf_warped_u + i);
+    float v = *(buf_warped_v + i);
+    float id = *(buf_warped_idepth + i);
+
+    acc.updateSingle(id * dx, id * dy, -id * (u * dx + v * dy),
+                     -(u * v * dx + dy * (1 + v * v)),
+                     u * v * dy + dx * (1 + u * u), u * dy - v * dx,
+                     a * (b0 - *(buf_warped_refColor + i)), -1,
+                     *(buf_warped_residual + i), *(buf_warped_weight + i));
+  }
+
+#endif
   acc.finish();
   H_out = acc.H.topLeftCorner<8, 8>().cast<double>() * (1.0f / n);
   b_out = acc.H.topRightCorner<8, 1>().cast<double>() * (1.0f / n);
@@ -398,7 +421,7 @@ void CoarseTracker::calcGSSSE(int lvl, Mat88 &H_out, Vec8 &b_out, SE3 refToNew,
   b_out.segment<1>(6) *= SCALE_A;
   b_out.segment<1>(7) *= SCALE_B;
 }
-#endif
+
 Vec6 CoarseTracker::calcRes(int lvl, SE3 refToNew, AffLight aff_g2l,
                             float cutoffTH) {
   float E = 0;

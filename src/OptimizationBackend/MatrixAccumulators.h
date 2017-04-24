@@ -100,7 +100,7 @@ public:
     numIn1++;
     shiftUp(false);
   }
-#if USE_SSE
+#ifdef USE_SSE
   inline void updateSSE(const __m128 val) {
     _mm_store_ps(SSEData, _mm_add_ps(_mm_load_ps(SSEData), val));
     num += 4;
@@ -128,7 +128,7 @@ private:
 
   void shiftUp(bool force) {
     if (numIn1 > 1000 || force) {
-#if USE_SSE
+#ifdef USE_SSE
       _mm_store_ps(SSEData1k,
                    _mm_add_ps(_mm_load_ps(SSEData), _mm_load_ps(SSEData1k)));
 #else
@@ -238,7 +238,7 @@ public:
     assert(idx == 4 * 105);
     num = numIn1 + numIn1k + numIn1m;
   }
-#if USE_SSE
+#ifdef USE_SSE
   inline void updateSSE(const __m128 J0, const __m128 J1, const __m128 J2,
                         const __m128 J3, const __m128 J4, const __m128 J5,
                         const __m128 J6, const __m128 J7, const __m128 J8,
@@ -727,10 +727,19 @@ private:
     }
 
     if (numIn1k > 1000 || force) {
-      for (int i = 0; i < 105; i++)
+      for (int i = 0; i < 105; i++) {
+#ifdef USE_SSE
         _mm_store_ps(SSEData1m + 4 * i,
                      _mm_add_ps(_mm_load_ps(SSEData1k + 4 * i),
                                 _mm_load_ps(SSEData1m + 4 * i)));
+#else
+
+        SSEData1m[4 * i + 1] = SSEData1m[4 * i + 1] + SSEData1m[4 * i + 1];
+        SSEData1m[4 * i + 2] = SSEData1m[4 * i + 2] + SSEData1m[4 * i + 2];
+        SSEData1m[4 * i + 3] = SSEData1m[4 * i + 3] + SSEData1m[4 * i + 3];
+        SSEData1m[4 * i] = SSEData1m[4 * i] + SSEData1m[4 * i];
+#endif
+      }
       numIn1m += numIn1k;
       numIn1k = 0;
       memset(SSEData1k, 0, sizeof(float) * 4 * 105);
@@ -795,7 +804,7 @@ public:
 
     num = numIn1 + numIn1k + numIn1m;
   }
-#if USE_SSE
+#ifdef USE_SSE
   inline void updateSSE(const float *const x, const float *const y,
                         const float a, const float b, const float c) {
 
@@ -1131,28 +1140,43 @@ private:
 
   void shiftUp(bool force) {
     if (numIn1 > 1000 || force) {
-      for (int i = 0; i < 60; i += 4)
-#if USE_SSE    
-    _mm_store_ps(Data1k + i, _mm_add_ps(_mm_load_ps(Data + i),
+      for (int i = 0; i < 60; i += 4) {
+#ifdef USE_SSE
+        _mm_store_ps(Data1k + i, _mm_add_ps(_mm_load_ps(Data + i),
                                             _mm_load_ps(Data1k + i)));
 #else
-    Data1k[i] = Data[i] + data1k[i];
-    Data1k[i+1] = Data[i+1] + data1k[i+1];
-    Data1k[i+2] = Data[i+2] + data1k[i+2];
-    Data1k[i+3] = Data[i+3] + data1k[i+3];
-   #endif 
-      for (int i = 0; i < 32; i += 4)
-#if USE_SSE      
-  _mm_store_ps(TopRight_Data1k + i,
+        Data1k[i] = Data[i] + Data1k[i];
+        Data1k[i + 1] = Data[i + 1] + Data1k[i + 1];
+        Data1k[i + 2] = Data[i + 2] + Data1k[i + 2];
+        Data1k[i + 3] = Data[i + 3] + Data1k[i + 3];
+#endif
+      }
+      for (int i = 0; i < 32; i += 4) {
+
+#ifdef USE_SSE
+        _mm_store_ps(TopRight_Data1k + i,
                      _mm_add_ps(_mm_load_ps(TopRight_Data + i),
                                 _mm_load_ps(TopRight_Data1k + i)));
 #else
-	
-      for (int i = 0; i < 8; i += 4)
+
+        TopRight_Data1k[i] = TopRight_Data[i] + TopRight_Data1k[i];
+        TopRight_Data1k[i + 1] = TopRight_Data[i + 1] + TopRight_Data1k[i + 1];
+        TopRight_Data1k[i + 2] = TopRight_Data[i + 2] + TopRight_Data1k[i + 2];
+        TopRight_Data1k[i + 3] = TopRight_Data[i + 3] + TopRight_Data1k[i + 3];
+#endif
+      }
+      for (int i = 0; i < 8; i += 4) {
+#ifdef USE_SSE
         _mm_store_ps(BotRight_Data1k + i,
                      _mm_add_ps(_mm_load_ps(BotRight_Data + i),
                                 _mm_load_ps(BotRight_Data1k + i)));
-
+#else
+        BotRight_Data1k[i] = BotRight_Data[i] + BotRight_Data1k[i];
+        BotRight_Data1k[i + 1] = BotRight_Data[i + 1] + BotRight_Data1k[i + 1];
+        BotRight_Data1k[i + 2] = BotRight_Data[i + 2] + BotRight_Data1k[i + 2];
+        BotRight_Data1k[i + 3] = BotRight_Data[i + 3] + BotRight_Data1k[i + 3];
+#endif
+      }
       numIn1k += numIn1;
       numIn1 = 0;
       memset(Data, 0, sizeof(float) * 60);
@@ -1215,7 +1239,7 @@ public:
       }
     assert(idx == 4 * 45);
   }
-#if USE_SSE
+#ifdef USE_SSE
   inline void updateSSE(const __m128 J0, const __m128 J1, const __m128 J2,
                         const __m128 J3, const __m128 J4, const __m128 J5,
                         const __m128 J6, const __m128 J7, const __m128 J8) {
@@ -1552,7 +1576,7 @@ public:
     numIn1++;
     shiftUp(false);
   }
-#if USE_SSE
+
   inline void updateSingleWeighted(float J0, float J1, float J2, float J3,
                                    float J4, float J5, float J6, float J7,
                                    float J8, float w, int off = 0) {
@@ -1670,7 +1694,6 @@ public:
     shiftUp(false);
   }
 
-#endif
 private:
   EIGEN_ALIGN16 float SSEData[4 * 45];
   EIGEN_ALIGN16 float SSEData1k[4 * 45];
@@ -1679,36 +1702,38 @@ private:
 
   void shiftUp(bool force) {
     if (numIn1 > 1000 || force) {
-      for (int i = 0; i < 45; i++)
-#if USE_SSE
+      for (int i = 0; i < 45; i++) {
+#ifdef USE_SSE
         _mm_store_ps(SSEData1k + 4 * i,
                      _mm_add_ps(_mm_load_ps(SSEData + 4 * i),
                                 _mm_load_ps(SSEData1k + 4 * i)));
 #else
-        SSEData1k[4 * i] = SSEData[4 *  i] + SSEData1k[4 * i];
-      SSEData1k[4 * i + 1] = SSEData[4 * i + 1] + SSEData1k[4 * i + 1];
-      SSEData1k[4 * i + 2] = SSEData[4 * i + 2] + SSEData1k[4 * i + 2];
-      SSEData1k[4 * i + 3] = SSEData[4 * i + 3] + SSEData1k[4 * i + 3];
+        SSEData1k[4 * i] = SSEData[4 * i] + SSEData1k[4 * i];
+        SSEData1k[4 * i + 1] = SSEData[4 * i + 1] + SSEData1k[4 * i + 1];
+        SSEData1k[4 * i + 2] = SSEData[4 * i + 2] + SSEData1k[4 * i + 2];
+        SSEData1k[4 * i + 3] = SSEData[4 * i + 3] + SSEData1k[4 * i + 3];
 
 #endif
+      }
       numIn1k += numIn1;
       numIn1 = 0;
       memset(SSEData, 0, sizeof(float) * 4 * 45);
     }
 
     if (numIn1k > 1000 || force) {
-      for (int i = 0; i < 45; i++)
-#if USE_SSE
+      for (int i = 0; i < 45; i++) {
+#ifdef USE_SSE
         _mm_store_ps(SSEData1m + 4 * i,
                      _mm_add_ps(_mm_load_ps(SSEData1k + 4 * i),
                                 _mm_load_ps(SSEData1m + 4 * i)));
 #else
         SSEData1m[4 * i] = SSEData[4 * i] + SSEData1m[4 * i];
-      SSEData1m[4 * i + 1] = SSEData[4 * i + 1] + SSEData1m[4 * i + 1];
-      SSEData1m[4 * i + 2] = SSEData[4 * i + 2] + SSEData1m[4 * i + 2];
-      SSEData1m[4 * i + 3] = SSEData[4 * i + 3] + SSEData1m[4 * i + 3];
+        SSEData1m[4 * i + 1] = SSEData[4 * i + 1] + SSEData1m[4 * i + 1];
+        SSEData1m[4 * i + 2] = SSEData[4 * i + 2] + SSEData1m[4 * i + 2];
+        SSEData1m[4 * i + 3] = SSEData[4 * i + 3] + SSEData1m[4 * i + 3];
 
 #endif
+      }
       numIn1m += numIn1k;
       numIn1k = 0;
       memset(SSEData1k, 0, sizeof(float) * 4 * 45);

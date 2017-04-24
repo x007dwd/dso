@@ -88,10 +88,9 @@ private:
   Vec6 calcResAndGS(int lvl, Mat88 &H_out, Vec8 &b_out, SE3 refToNew,
                     AffLight aff_g2l, float cutoffTH);
   Vec6 calcRes(int lvl, SE3 refToNew, AffLight aff_g2l, float cutoffTH);
-#if USE_SSE
+
   void calcGSSSE(int lvl, Mat88 &H_out, Vec8 &b_out, SE3 refToNew,
                  AffLight aff_g2l);
-#endif
   void calcGS(int lvl, Mat88 &H_out, Vec8 &b_out, SE3 refToNew,
               AffLight aff_g2l);
 
