@@ -340,6 +340,7 @@ void CoarseTracker::calcGS(int lvl, Mat88 &H_out, Vec8 &b_out, SE3 refToNew,
   b_out.segment<1>(6) *= SCALE_A;
   b_out.segment<1>(7) *= SCALE_B;
 }
+#if USE_SSE
 void CoarseTracker::calcGSSSE(int lvl, Mat88 &H_out, Vec8 &b_out, SE3 refToNew,
                               AffLight aff_g2l) {
   acc.initialize();
@@ -397,7 +398,7 @@ void CoarseTracker::calcGSSSE(int lvl, Mat88 &H_out, Vec8 &b_out, SE3 refToNew,
   b_out.segment<1>(6) *= SCALE_A;
   b_out.segment<1>(7) *= SCALE_B;
 }
-
+#endif
 Vec6 CoarseTracker::calcRes(int lvl, SE3 refToNew, AffLight aff_g2l,
                             float cutoffTH) {
   float E = 0;
