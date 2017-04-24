@@ -145,7 +145,7 @@ void settingsDefault(int preset)
 
 
 
-void parseArgument(char* arg)
+void parseArgument(const char* arg)
 {
 	int option;
 	float foption;
@@ -337,9 +337,25 @@ void parseArgument(char* arg)
 int main( int argc, char** argv )
 {
 	//setlocale(LC_ALL, "");
-
-	for(int i=1; i<argc;i++)
-		parseArgument(argv[i]);
+// 	std::string  argvString1=  "files=/media/bobin/DATA1/SLAM/data/TUM-Monocular/Mono/all_sequences/sequence_01/images.zip";
+// 	std::string  argvString2 = "calib=/media/bobin/DATA1/SLAM/data/TUM-Monocular/Mono/all_sequences/sequence_01/camera.txt";
+// 	std::string  argvString3 = "gamma=/media/bobin/DATA1/SLAM/data/TUM-Monocular/Mono/all_sequences/sequence_01/pcalib.txt";
+// 	std::string  argvString4 ="vignette=/media/bobin/DATA1/SLAM/data/TUM-Monocular/Mono/all_sequences/sequence_01/vignette.png";
+// 	std::string  argvString5 ="preset=0";
+// 	std::string  argvString6 ="mode=0";
+	std::string  argvString1=  "files=/media/bobin/DATA1/SLAM/data/dataset/sequences/00/image_3";
+	std::string  argvString2 = "calib=/media/bobin/DATA1/SLAM/data/dataset/sequences/01/camera.txt";
+// 	std::string  argvString3 = "gamma=/media/bobin/DATA1/SLAM/data/TUM-Monocular/Mono/all_sequences/sequence_01/pcalib.txt";
+// 	std::string  argvString4 ="vignette=/media/bobin/DATA1/SLAM/data/TUM-Monocular/Mono/all_sequences/sequence_01/vignette.png";
+	std::string  argvString3 ="preset=0";
+	std::string  argvString4 ="mode=1";
+	//for(int i=1; i<argc;i++)
+	parseArgument(argvString1.c_str());
+	parseArgument(argvString2.c_str());
+	parseArgument(argvString3.c_str());
+	parseArgument(argvString4.c_str());
+// 	parseArgument(argvString5.c_str());
+// 	parseArgument(argvString6.c_str());
 
 	// hook crtl+C.
 	boost::thread exThread = boost::thread(exitThread);
