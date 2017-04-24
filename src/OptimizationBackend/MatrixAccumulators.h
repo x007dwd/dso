@@ -113,13 +113,13 @@ public:
     num++;
     numIn1++;
   }
-
+#ifdef USE_SSE
   inline void updateSSENoShift(const __m128 val) {
     _mm_store_ps(SSEData, _mm_add_ps(_mm_load_ps(SSEData), val));
     num += 4;
     numIn1++;
   }
-
+#endif
 private:
   EIGEN_ALIGN16 float SSEData[4 * 1];
   EIGEN_ALIGN16 float SSEData1k[4 * 1];
@@ -143,8 +143,16 @@ private:
     }
 
     if (numIn1k > 1000 || force) {
-      _mm_store_ps(SSEData1m,
+#ifdef USE_SSE
+    
+	 _mm_store_ps(SSEData1m,
                    _mm_add_ps(_mm_load_ps(SSEData1k), _mm_load_ps(SSEData1m)));
+#else
+      SSEData1m[0] = SSEData1k[0] + SSEData1m[0];
+      SSEData1m[1] = SSEData1k[1] + SSEData1m[1];
+      SSEData1m[2] = SSEData1k[2] + SSEData1m[2];
+      SSEData1m[3] = SSEData1k[3] + SSEData1m[3];
+#endif
       numIn1m += numIn1k;
       numIn1k = 0;
       memset(SSEData1k, 0, sizeof(float) * 4 * 1);
@@ -718,9 +726,19 @@ private:
   void shiftUp(bool force) {
     if (numIn1 > 1000 || force) {
       for (int i = 0; i < 105; i++)
+	{
+#ifdef USE_SSE
         _mm_store_ps(SSEData1k + 4 * i,
                      _mm_add_ps(_mm_load_ps(SSEData + 4 * i),
                                 _mm_load_ps(SSEData1k + 4 * i)));
+#else
+        SSEData1k[4 * i + 1] = SSEData[4 * i + 1] + SSEData1k[4 * i + 1];
+        SSEData1k[4 * i + 2] = SSEData[4 * i + 2] + SSEData1k[4 * i + 2];
+        SSEData1k[4 * i + 3] = SSEData[4 * i + 3] + SSEData1k[4 * i + 3];
+        SSEData1k[4 * i] = SSEData[4 * i] + SSEData1k[4 * i];
+
+#endif
+	}
       numIn1k += numIn1;
       numIn1 = 0;
       memset(SSEData, 0, sizeof(float) * 4 * 105);
@@ -1186,17 +1204,46 @@ private:
 
     if (numIn1k > 1000 || force) {
       for (int i = 0; i < 60; i += 4)
+	{
+#ifdef USE_SSE
         _mm_store_ps(Data1m + i, _mm_add_ps(_mm_load_ps(Data1k + i),
                                             _mm_load_ps(Data1m + i)));
+#else
+	 Data1m[i] = Data1k[i] + Data1m[i];
+        Data1m[i + 1] = Data1k[i + 1] + Data1m[i + 1];
+        Data1m[i + 2] = Data1k[i + 2] + Data1m[i + 2];
+        Data1m[i + 3] = Data1k[i + 3] + Data1m[i + 3];
+
+	#endif 
+	}
       for (int i = 0; i < 32; i += 4)
-        _mm_store_ps(TopRight_Data1m + i,
+        {
+#ifdef USE_SSE
+	_mm_store_ps(TopRight_Data1m + i,
                      _mm_add_ps(_mm_load_ps(TopRight_Data1k + i),
                                 _mm_load_ps(TopRight_Data1m + i)));
+#else
+	TopRight_Data1m[i] = TopRight_Data1k[i] + TopRight_Data1m[i];
+        TopRight_Data1m[i + 1] = TopRight_Data1k[i + 1] + TopRight_Data1m[i + 1];
+        TopRight_Data1m[i + 2] = TopRight_Data1k[i + 2] + TopRight_Data1m[i + 2];
+        TopRight_Data1m[i + 3] = TopRight_Data1k[i + 3] + TopRight_Data1m[i + 3];
+#endif
+}
       for (int i = 0; i < 8; i += 4)
-        _mm_store_ps(BotRight_Data1m + i,
+ {
+#ifdef USE_SSE
+     
+  _mm_store_ps(BotRight_Data1m + i,
                      _mm_add_ps(_mm_load_ps(BotRight_Data1k + i),
                                 _mm_load_ps(BotRight_Data1m + i)));
+#else
+	BotRight_Data1m[i] = BotRight_Data1k[i] + BotRight_Data1m[i];
+        BotRight_Data1m[i + 1] = BotRight_Data1k[i + 1] + BotRight_Data1m[i + 1];
+        BotRight_Data1m[i + 2] = BotRight_Data1k[i + 2] + BotRight_Data1m[i + 2];
+        BotRight_Data1m[i + 3] = BotRight_Data1k[i + 3] + BotRight_Data1m[i + 3];
 
+#endif
+}
       numIn1m += numIn1k;
       numIn1k = 0;
       memset(Data1k, 0, sizeof(float) * 60);
