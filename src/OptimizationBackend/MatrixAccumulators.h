@@ -1132,12 +1132,22 @@ private:
   void shiftUp(bool force) {
     if (numIn1 > 1000 || force) {
       for (int i = 0; i < 60; i += 4)
-        _mm_store_ps(Data1k + i, _mm_add_ps(_mm_load_ps(Data + i),
+#if USE_SSE    
+    _mm_store_ps(Data1k + i, _mm_add_ps(_mm_load_ps(Data + i),
                                             _mm_load_ps(Data1k + i)));
+#else
+    Data1k[i] = Data[i] + data1k[i];
+    Data1k[i+1] = Data[i+1] + data1k[i+1];
+    Data1k[i+2] = Data[i+2] + data1k[i+2];
+    Data1k[i+3] = Data[i+3] + data1k[i+3];
+   #endif 
       for (int i = 0; i < 32; i += 4)
-        _mm_store_ps(TopRight_Data1k + i,
+#if USE_SSE      
+  _mm_store_ps(TopRight_Data1k + i,
                      _mm_add_ps(_mm_load_ps(TopRight_Data + i),
                                 _mm_load_ps(TopRight_Data1k + i)));
+#else
+	
       for (int i = 0; i < 8; i += 4)
         _mm_store_ps(BotRight_Data1k + i,
                      _mm_add_ps(_mm_load_ps(BotRight_Data + i),
@@ -1313,7 +1323,6 @@ public:
     numIn1++;
     shiftUp(false);
   }
-#endif
   inline void updateSSE_eighted(const __m128 J0, const __m128 J1,
                                 const __m128 J2, const __m128 J3,
                                 const __m128 J4, const __m128 J5,
@@ -1433,6 +1442,7 @@ public:
     numIn1++;
     shiftUp(false);
   }
+#endif
 
   inline void updateSingle(const float J0, const float J1, const float J2,
                            const float J3, const float J4, const float J5,
@@ -1675,10 +1685,10 @@ private:
                      _mm_add_ps(_mm_load_ps(SSEData + 4 * i),
                                 _mm_load_ps(SSEData1k + 4 * i)));
 #else
-        SSEData1k[4 * i] = SSEData[4×i] + SSEData1k[4 * i];
-      SSEData1k[4 * i + 1] = SSEData[4×i + 1] + SSEData1k[4 * i + 1];
-      SSEData1k[4 * i + 2] = SSEData[4×i + 2] + SSEData1k[4 * i + 2];
-      SSEData1k[4 * i + 3] = SSEData[4×i + 3] + SSEData1k[4 * i + 3];
+        SSEData1k[4 * i] = SSEData[4 *  i] + SSEData1k[4 * i];
+      SSEData1k[4 * i + 1] = SSEData[4 * i + 1] + SSEData1k[4 * i + 1];
+      SSEData1k[4 * i + 2] = SSEData[4 * i + 2] + SSEData1k[4 * i + 2];
+      SSEData1k[4 * i + 3] = SSEData[4 * i + 3] + SSEData1k[4 * i + 3];
 
 #endif
       numIn1k += numIn1;
@@ -1693,10 +1703,10 @@ private:
                      _mm_add_ps(_mm_load_ps(SSEData1k + 4 * i),
                                 _mm_load_ps(SSEData1m + 4 * i)));
 #else
-        SSEData1m[4 * i] = SSEData[4×i] + SSEData1m[4 * i];
-      SSEData1m[4 * i + 1] = SSEData[4×i + 1] + SSEData1m[4 * i + 1];
-      SSEData1m[4 * i + 2] = SSEData[4×i + 2] + SSEData1m[4 * i + 2];
-      SSEData1m[4 * i + 3] = SSEData[4×i + 3] + SSEData1m[4 * i + 3];
+        SSEData1m[4 * i] = SSEData[4 * i] + SSEData1m[4 * i];
+      SSEData1m[4 * i + 1] = SSEData[4 * i + 1] + SSEData1m[4 * i + 1];
+      SSEData1m[4 * i + 2] = SSEData[4 * i + 2] + SSEData1m[4 * i + 2];
+      SSEData1m[4 * i + 3] = SSEData[4 * i + 3] + SSEData1m[4 * i + 3];
 
 #endif
       numIn1m += numIn1k;
