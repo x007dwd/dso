@@ -105,7 +105,7 @@ void EFResidual::fixLinearizationF(EnergyFunctional *ef) {
   float delta_a = dp[6];
   float delta_b = dp[7];
 
-  for (int i = 0; i < patternNum; i += 4) {
+  for (int i = 0; i < patternNum; i++) {
     // PATTERN: rtz = resF - [JI*Jp Ja]*delta.
     float rtz = J->resF[i];
     rtz -= J->JIdx[0][i] * Jp_delta_x;
