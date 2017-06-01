@@ -1,6 +1,6 @@
 /**
 * This file is part of DSO.
-* 
+*
 * Copyright 2016 Technical University of Munich and Intel.
 * Developed by Jakob Engel <engelj at in dot tum dot de>,
 * for more information see <http://vision.in.tum.de/dso>.
@@ -21,91 +21,75 @@
 * along with DSO. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
 
- 
 #include "util/NumType.h"
- 
+
 #include "FullSystem/HessianBlocks.h"
-namespace dso
-{
+namespace dsio {
 
-
-struct ImmaturePointTemporaryResidual
-{
+struct ImmaturePointTemporaryResidual {
 public:
-	ResState state_state;
-	double state_energy;
-	ResState state_NewState;
-	double state_NewEnergy;
-	FrameHessian* target;
+  ResState state_state;
+  double state_energy;
+  ResState state_NewState;
+  double state_NewEnergy;
+  FrameHessian *target;
 };
 
-
 enum ImmaturePointStatus {
-	IPS_GOOD=0,					// traced well and good
-	IPS_OOB,					// OOB: end tracking & marginalize!
-	IPS_OUTLIER,				// energy too high: if happens again: outlier!
-	IPS_SKIPPED,				// traced well and good (but not actually traced).
-	IPS_BADCONDITION,			// not traced because of bad condition.
-	IPS_UNINITIALIZED};			// not even traced once.
+  IPS_GOOD = 0,     // traced well and good
+  IPS_OOB,          // OOB: end tracking & marginalize!
+  IPS_OUTLIER,      // energy too high: if happens again: outlier!
+  IPS_SKIPPED,      // traced well and good (but not actually traced).
+  IPS_BADCONDITION, // not traced because of bad condition.
+  IPS_UNINITIALIZED
+}; // not even traced once.
 
-
-class ImmaturePoint
-{
+class ImmaturePoint {
 public:
-	// static values
-	float color[MAX_RES_PER_POINT];
-	float weights[MAX_RES_PER_POINT];
-	bool colorOverexposed[MAX_RES_PER_POINT];
+  // static values
+  float color[MAX_RES_PER_POINT];
+  float weights[MAX_RES_PER_POINT];
+  bool colorOverexposed[MAX_RES_PER_POINT];
 
+  Mat22f gradH;
+  Vec2f gradH_ev;
+  Mat22f gradH_eig;
+  float energyTH;
+  float u, v;
+  FrameHessian *host;
+  int idxInImmaturePoints;
 
+  float quality;
 
+  float my_type;
 
+  float idepth_min;
+  float idepth_max;
+  ImmaturePoint(int u_, int v_, FrameHessian *host_, float type,
+                CalibHessian *HCalib);
+  ~ImmaturePoint();
 
-	Mat22f gradH;
-	Vec2f gradH_ev;
-	Mat22f gradH_eig;
-	float energyTH;
-	float u,v;
-	FrameHessian* host;
-	int idxInImmaturePoints;
+  ImmaturePointStatus traceOn(FrameHessian *frame, Mat33f hostToFrame_KRKi,
+                              Vec3f hostToFrame_Kt, Vec2f hostToFrame_affine,
+                              CalibHessian *HCalib, bool debugPrint = false);
 
-	float quality;
+  ImmaturePointStatus lastTraceStatus;
+  Vec2f lastTraceUV;
+  float lastTracePixelInterval;
 
-	float my_type;
+  float idepth_GT;
 
-	float idepth_min;
-	float idepth_max;
-	ImmaturePoint(int u_, int v_, FrameHessian* host_, float type, CalibHessian* HCalib);
-	~ImmaturePoint();
+  double linearizeResidual(CalibHessian *HCalib, const float outlierTHSlack,
+                           ImmaturePointTemporaryResidual *tmpRes, float &Hdd,
+                           float &bd, float idepth);
+  float getdPixdd(CalibHessian *HCalib, ImmaturePointTemporaryResidual *tmpRes,
+                  float idepth);
 
-	ImmaturePointStatus traceOn(FrameHessian* frame, Mat33f hostToFrame_KRKi, Vec3f hostToFrame_Kt, Vec2f hostToFrame_affine, CalibHessian* HCalib, bool debugPrint=false);
-
-	ImmaturePointStatus lastTraceStatus;
-	Vec2f lastTraceUV;
-	float lastTracePixelInterval;
-
-	float idepth_GT;
-
-	double linearizeResidual(
-			CalibHessian *  HCalib, const float outlierTHSlack,
-			ImmaturePointTemporaryResidual* tmpRes,
-			float &Hdd, float &bd,
-			float idepth);
-	float getdPixdd(
-			CalibHessian *  HCalib,
-			ImmaturePointTemporaryResidual* tmpRes,
-			float idepth);
-
-	float calcResidual(
-			CalibHessian *  HCalib, const float outlierTHSlack,
-			ImmaturePointTemporaryResidual* tmpRes,
-			float idepth);
+  float calcResidual(CalibHessian *HCalib, const float outlierTHSlack,
+                     ImmaturePointTemporaryResidual *tmpRes, float idepth);
 
 private:
 };
-
 }
-

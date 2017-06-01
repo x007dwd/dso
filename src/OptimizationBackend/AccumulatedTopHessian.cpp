@@ -26,7 +26,7 @@
 #include "OptimizationBackend/EnergyFunctionalStructs.h"
 #include <iostream>
 
-namespace dso {
+namespace dsio {
 
 template <int mode>
 void AccumulatedTopHessianSSE::addPointC(

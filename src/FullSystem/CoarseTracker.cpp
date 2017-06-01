@@ -36,7 +36,7 @@
 #include "OptimizationBackend/EnergyFunctionalStructs.h"
 #include <algorithm>
 
-namespace dso {
+namespace dsio {
 CoarseTracker::CoarseTracker(int ww, int hh) : lastRef_aff_g2l(0, 0) {
   // make coarse tracking templates.
   for (int lvl = 0; lvl < pyrLevelsUsed; lvl++) {

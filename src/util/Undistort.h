@@ -1,6 +1,6 @@
 /**
 * This file is part of DSO.
-* 
+*
 * Copyright 2016 Technical University of Munich and Intel.
 * Developed by Jakob Engel <engelj at in dot tum dot de>,
 * for more information see <http://vision.in.tum.de/dso>.
@@ -21,127 +21,130 @@
 * along with DSO. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
 
+#include "Eigen/Core"
 #include "util/ImageAndExposure.h"
 #include "util/MinimalImage.h"
 #include "util/NumType.h"
-#include "Eigen/Core"
+#include "util/globalCalib.h"
+namespace dsio {
 
-
-
-
-
-namespace dso
-{
-
-
-class PhotometricUndistorter
-{
+class PhotometricUndistorter {
 public:
-	PhotometricUndistorter(std::string file, std::string noiseImage, std::string vignetteImage, int w_, int h_);
-	~PhotometricUndistorter();
+  PhotometricUndistorter(std::string file, std::string noiseImage,
+                         std::string vignetteImage, int w_, int h_);
+  ~PhotometricUndistorter();
 
-	// removes readout noise, and converts to irradiance.
-	// affine normalizes values to 0 <= I < 256.
-	// raw irradiance = a*I + b.
-	// output will be written in [output].
-	template<typename T> void processFrame(T* image_in, float exposure_time, float factor=1);
-	void unMapFloatImage(float* image);
+  // removes readout noise, and converts to irradiance.
+  // affine normalizes values to 0 <= I < 256.
+  // raw irradiance = a*I + b.
+  // output will be written in [output].
+  template <typename T>
+  void processFrame(T *image_in, float exposure_time, float factor = 1);
+  void unMapFloatImage(float *image);
 
-	ImageAndExposure* output;
+  ImageAndExposure *output;
 
-	float* getG() {if(!valid) return 0; else return G;};
+  float *getG() {
+    if (!valid)
+      return 0;
+    else
+      return G;
+  };
+
 private:
-    float G[256*256];
-    int GDepth;
-	float* vignetteMap;
-	float* vignetteMapInv;
-	int w,h;
-	bool valid;
+  float G[256 * 256];
+  int GDepth;
+  float *vignetteMap;
+  float *vignetteMapInv;
+  int w, h;
+  bool valid;
 };
 
-
-class Undistort
-{
+class Undistort {
 public:
-	virtual ~Undistort();
+  virtual ~Undistort();
 
-	virtual void distortCoordinates(float* in_x, float* in_y, float* out_x, float* out_y, int n) const = 0;
+  virtual void distortCoordinates(float *in_x, float *in_y, float *out_x,
+                                  float *out_y, int n) const = 0;
 
-	
-	inline const Mat33 getK() const {return K;};
-	inline const Eigen::Vector2i getSize() const {return Eigen::Vector2i(w,h);};
-	inline const VecX getOriginalParameter() const {return parsOrg;};
-	inline const Eigen::Vector2i getOriginalSize() {return Eigen::Vector2i(wOrg,hOrg);};
-	inline bool isValid() {return valid;};
+  inline const Mat33 getK() const { return K; };
+  inline const Eigen::Vector2i getSize() const {
+    return Eigen::Vector2i(w, h);
+  };
+  inline const VecX getOriginalParameter() const { return parsOrg; };
+  inline const Eigen::Vector2i getOriginalSize() {
+    return Eigen::Vector2i(wOrg, hOrg);
+  };
+  inline bool isValid() { return valid; };
 
-	template<typename T>
-	ImageAndExposure* undistort(const MinimalImage<T>* image_raw, float exposure=0, double timestamp=0, float factor=1) const;
-	static Undistort* getUndistorterForFile(std::string configFilename, std::string gammaFilename, std::string vignetteFilename);
+  template <typename T>
+  ImageAndExposure *undistort(const MinimalImage<T> *image_raw,
+                              float exposure = 0, double timestamp = 0,
+                              float factor = 1) const;
+  static Undistort *getUndistorterForFile(std::string configFilename,
+                                          std::string gammaFilename,
+                                          std::string vignetteFilename);
+  static Undistort *getUndistorterForMsg(double *para);
+  void loadPhotometricCalibration(std::string file, std::string noiseImage,
+                                  std::string vignetteImage);
 
-	void loadPhotometricCalibration(std::string file, std::string noiseImage, std::string vignetteImage);
-
-	PhotometricUndistorter* photometricUndist;
+  PhotometricUndistorter *photometricUndist;
 
 protected:
-    int w, h, wOrg, hOrg, wUp, hUp;
-    int upsampleUndistFactor;
-	Mat33 K;
-	VecX parsOrg;
-	bool valid;
-	bool passthrough;
+  int w, h, wOrg, hOrg, wUp, hUp;
+  int upsampleUndistFactor;
+  Mat33 K;
+  VecX parsOrg;
+  bool valid;
+  bool passthrough;
 
-	float* remapX;
-	float* remapY;
+  float *remapX;
+  float *remapY;
 
-	void applyBlurNoise(float* img) const;
+  void applyBlurNoise(float *img) const;
 
-	void makeOptimalK_crop();
-	void makeOptimalK_full();
-
-	void readFromFile(const char* configFileName, int nPars, std::string prefix = "");
+  void makeOptimalK_crop();
+  void makeOptimalK_full();
+  void readFromVec(double *para, int nPars);
+  void readFromFile(const char *configFileName, int nPars,
+                    std::string prefix = "");
 };
 
-class UndistortFOV : public Undistort
-{
+class UndistortFOV : public Undistort {
 public:
-
-	UndistortFOV(const char* configFileName);
-	~UndistortFOV();
-	void distortCoordinates(float* in_x, float* in_y, float* out_x, float* out_y, int n) const;
-
+  UndistortFOV(const char *configFileName);
+  ~UndistortFOV();
+  void distortCoordinates(float *in_x, float *in_y, float *out_x, float *out_y,
+                          int n) const;
 };
 
-class UndistortOpenCV : public Undistort
-{
+class UndistortOpenCV : public Undistort {
 public:
-	UndistortOpenCV(const char* configFileName);
-	~UndistortOpenCV();
-	void distortCoordinates(float* in_x, float* in_y, float* out_x, float* out_y, int n) const;
-
+  UndistortOpenCV(const char *configFileName);
+  UndistortOpenCV(double *para);
+  ~UndistortOpenCV();
+  void distortCoordinates(float *in_x, float *in_y, float *out_x, float *out_y,
+                          int n) const;
 };
 
-class UndistortPinhole : public Undistort
-{
+class UndistortPinhole : public Undistort {
 public:
-	UndistortPinhole(const char* configFileName);
-	~UndistortPinhole();
-	void distortCoordinates(float* in_x, float* in_y, float* out_x, float* out_y, int n) const;
+  UndistortPinhole(const char *configFileName);
+  ~UndistortPinhole();
+  void distortCoordinates(float *in_x, float *in_y, float *out_x, float *out_y,
+                          int n) const;
 
 private:
-	float inputCalibration[8];
+  float inputCalibration[8];
 };
 
-class UndistortKB : public Undistort
-{
+class UndistortKB : public Undistort {
 public:
-	UndistortKB(const char* configFileName);
-	~UndistortKB();
-	void distortCoordinates(float* in_x, float* in_y, float* out_x, float* out_y, int n) const;
-
+  UndistortKB(const char *configFileName);
+  ~UndistortKB();
+  void distortCoordinates(float *in_x, float *in_y, float *out_x, float *out_y,
+                          int n) const;
 };
-
 }
-

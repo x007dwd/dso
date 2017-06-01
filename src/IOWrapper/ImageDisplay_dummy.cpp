@@ -1,6 +1,6 @@
 /**
 * This file is part of DSO.
-* 
+*
 * Copyright 2016 Technical University of Munich and Intel.
 * Developed by Jakob Engel <engelj at in dot tum dot de>,
 * for more information see <http://vision.in.tum.de/dso>.
@@ -21,30 +21,36 @@
 * along with DSO. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-
 #include "IOWrapper/ImageDisplay.h"
 
-namespace dso
-{
+namespace dsio {
 
+namespace IOWrap {
+void displayImage(const char *windowName, const MinimalImageB *img,
+                  bool autoSize){};
+void displayImage(const char *windowName, const MinimalImageB3 *img,
+                  bool autoSize){};
+void displayImage(const char *windowName, const MinimalImageF *img,
+                  bool autoSize){};
+void displayImage(const char *windowName, const MinimalImageF3 *img,
+                  bool autoSize){};
+void displayImage(const char *windowName, const MinimalImageB16 *img,
+                  bool autoSize){};
 
-namespace IOWrap
-{
-void displayImage(const char* windowName, const MinimalImageB* img, bool autoSize) {};
-void displayImage(const char* windowName, const MinimalImageB3* img, bool autoSize) {};
-void displayImage(const char* windowName, const MinimalImageF* img, bool autoSize) {};
-void displayImage(const char* windowName, const MinimalImageF3* img, bool autoSize) {};
-void displayImage(const char* windowName, const MinimalImageB16* img, bool autoSize) {};
+void displayImageStitch(const char *windowName,
+                        const std::vector<MinimalImageB *> images, int cc,
+                        int rc){};
+void displayImageStitch(const char *windowName,
+                        const std::vector<MinimalImageB3 *> images, int cc,
+                        int rc){};
+void displayImageStitch(const char *windowName,
+                        const std::vector<MinimalImageF *> images, int cc,
+                        int rc){};
+void displayImageStitch(const char *windowName,
+                        const std::vector<MinimalImageF3 *> images, int cc,
+                        int rc){};
 
-
-void displayImageStitch(const char* windowName, const std::vector<MinimalImageB*> images, int cc, int rc) {};
-void displayImageStitch(const char* windowName, const std::vector<MinimalImageB3*> images, int cc, int rc) {};
-void displayImageStitch(const char* windowName, const std::vector<MinimalImageF*> images, int cc, int rc) {};
-void displayImageStitch(const char* windowName, const std::vector<MinimalImageF3*> images, int cc, int rc) {};
-
-int waitKey(int milliseconds) {return 0;};
-void closeAllWindows() {};
+int waitKey(int milliseconds) { return 0; };
+void closeAllWindows(){};
 }
-
 }

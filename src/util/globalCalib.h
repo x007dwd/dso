@@ -1,6 +1,6 @@
 /**
 * This file is part of DSO.
-* 
+*
 * Copyright 2016 Technical University of Munich and Intel.
 * Developed by Jakob Engel <engelj at in dot tum dot de>,
 * for more information see <http://vision.in.tum.de/dso>.
@@ -21,25 +21,21 @@
 * along with DSO. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-
 #pragma once
-#include "util/settings.h"
 #include "util/NumType.h"
+#include "util/settings.h"
 
-namespace dso
-{
-	extern int wG[PYR_LEVELS], hG[PYR_LEVELS];
-	extern float fxG[PYR_LEVELS], fyG[PYR_LEVELS],
-		  cxG[PYR_LEVELS], cyG[PYR_LEVELS];
+namespace dsio {
+extern int wG[PYR_LEVELS], hG[PYR_LEVELS];
+extern float fxG[PYR_LEVELS], fyG[PYR_LEVELS], cxG[PYR_LEVELS], cyG[PYR_LEVELS];
 
-	extern float fxiG[PYR_LEVELS], fyiG[PYR_LEVELS],
-		  cxiG[PYR_LEVELS], cyiG[PYR_LEVELS];
+extern float fxiG[PYR_LEVELS], fyiG[PYR_LEVELS], cxiG[PYR_LEVELS],
+    cyiG[PYR_LEVELS];
 
-	extern Eigen::Matrix3f KG[PYR_LEVELS],KiG[PYR_LEVELS];
+extern Eigen::Matrix3f KG[PYR_LEVELS], KiG[PYR_LEVELS];
 
-	extern float wM3G;
-	extern float hM3G;
+extern float wM3G;
+extern float hM3G;
 
-	void setGlobalCalib(int w, int h, Eigen::Matrix3f K );
+void setGlobalCalib(int w, int h, Eigen::Matrix3f K);
 }

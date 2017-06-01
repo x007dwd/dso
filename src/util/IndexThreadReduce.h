@@ -1,6 +1,6 @@
 /**
 * This file is part of DSO.
-* 
+*
 * Copyright 2016 Technical University of Munich and Intel.
 * Developed by Jakob Engel <engelj at in dot tum dot de>,
 * for more information see <http://vision.in.tum.de/dso>.
@@ -21,194 +21,175 @@
 * along with DSO. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
-
 #pragma once
-#include "util/settings.h"
 #include "boost/thread.hpp"
-#include <stdio.h>
+#include "util/settings.h"
 #include <iostream>
+#include <stdio.h>
+#include "util/NumType.h"
+namespace dsio{
 
-
-
-namespace dso
-{
-
-template<typename Running>
-class IndexThreadReduce
-{
+template <typename Running>
+class IndexThreadReduce {
 
 public:
-	inline IndexThreadReduce()
-	{
-		nextIndex = 0;
-		maxIndex = 0;
-		stepSize = 1;
-		callPerIndex = boost::bind(&IndexThreadReduce::callPerIndexDefault, this, _1, _2, _3, _4);
+  inline IndexThreadReduce() {
+    nextIndex = 0;
+    maxIndex = 0;
+    stepSize = 1;
+    callPerIndex = boost::bind(&IndexThreadReduce::callPerIndexDefault, this,
+                               _1, _2, _3, _4);
 
-		running = true;
-		for(int i=0;i<NUM_THREADS;i++)
-		{
-			isDone[i] = false;
-			gotOne[i] = true;
-			workerThreads[i] = boost::thread(&IndexThreadReduce::workerLoop, this, i);
-		}
+    running = true;
+    for (int i = 0; i < NUM_THREADS; i++) {
+      isDone[i] = false;
+      gotOne[i] = true;
+      workerThreads[i] = boost::thread(&IndexThreadReduce::workerLoop, this, i);
+    }
+  }
+  inline ~IndexThreadReduce() {
+    running = false;
 
-	}
-	inline ~IndexThreadReduce()
-	{
-		running = false;
+    exMutex.lock();
+    todo_signal.notify_all();
+    exMutex.unlock();
 
-		exMutex.lock();
-		todo_signal.notify_all();
-		exMutex.unlock();
+    for (int i = 0; i < NUM_THREADS; i++)
+      workerThreads[i].join();
 
-		for(int i=0;i<NUM_THREADS;i++)
-			workerThreads[i].join();
+    printf("destroyed ThreadReduce\n");
+  }
 
+  inline void
+  reduce(boost::function<void(int, int, Running *, int)> callPerIndex,
+         int first, int end, int stepSize = 0) {
 
-		printf("destroyed ThreadReduce\n");
+    memset(&stats, 0, sizeof(Running));
 
-	}
+    //		if(!multiThreading)
+    //		{
+    //			callPerIndex(first, end, &stats, 0);
+    //			return;
+    //		}
 
-	inline void reduce(boost::function<void(int,int,Running*,int)> callPerIndex, int first, int end, int stepSize = 0)
-	{
+    if (stepSize == 0)
+      stepSize = ((end - first) + NUM_THREADS - 1) / NUM_THREADS;
 
-		memset(&stats, 0, sizeof(Running));
+    // printf("reduce called\n");
 
-//		if(!multiThreading)
-//		{
-//			callPerIndex(first, end, &stats, 0);
-//			return;
-//		}
+    boost::unique_lock<boost::mutex> lock(exMutex);
 
+    // save
+    this->callPerIndex = callPerIndex;
+    nextIndex = first;
+    maxIndex = end;
+    this->stepSize = stepSize;
 
+    // go worker threads!
+    for (int i = 0; i < NUM_THREADS; i++) {
+      isDone[i] = false;
+      gotOne[i] = false;
+    }
 
-		if(stepSize == 0)
-			stepSize = ((end-first)+NUM_THREADS-1)/NUM_THREADS;
+    // let them start!
+    todo_signal.notify_all();
 
+    // printf("reduce waiting for threads to finish\n");
+    // wait for all worker threads to signal they are done.
+    while (true) {
+      // wait for at least one to finish
+      done_signal.wait(lock);
+      // printf("thread finished!\n");
 
-		//printf("reduce called\n");
+      // check if actually all are finished.
+      bool allDone = true;
+      for (int i = 0; i < NUM_THREADS; i++)
+        allDone = allDone && isDone[i];
 
-		boost::unique_lock<boost::mutex> lock(exMutex);
+      // all are finished! exit.
+      if (allDone)
+        break;
+    }
 
-		// save
-		this->callPerIndex = callPerIndex;
-		nextIndex = first;
-		maxIndex = end;
-		this->stepSize = stepSize;
+    nextIndex = 0;
+    maxIndex = 0;
+    this->callPerIndex = boost::bind(&IndexThreadReduce::callPerIndexDefault,
+                                     this, _1, _2, _3, _4);
 
-		// go worker threads!
-		for(int i=0;i<NUM_THREADS;i++)
-		{
-			isDone[i] = false;
-			gotOne[i] = false;
-		}
+    // printf("reduce done (all threads finished)\n");
+  }
 
-		// let them start!
-		todo_signal.notify_all();
-
-
-		//printf("reduce waiting for threads to finish\n");
-		// wait for all worker threads to signal they are done.
-		while(true)
-		{
-			// wait for at least one to finish
-			done_signal.wait(lock);
-			//printf("thread finished!\n");
-
-			// check if actually all are finished.
-			bool allDone = true;
-			for(int i=0;i<NUM_THREADS;i++)
-				allDone = allDone && isDone[i];
-
-			// all are finished! exit.
-			if(allDone)
-				break;
-		}
-
-		nextIndex = 0;
-		maxIndex = 0;
-		this->callPerIndex = boost::bind(&IndexThreadReduce::callPerIndexDefault, this, _1, _2, _3, _4);
-
-		//printf("reduce done (all threads finished)\n");
-	}
-
-	Running stats;
+  Running stats;
 
 private:
-	boost::thread workerThreads[NUM_THREADS];
-	bool isDone[NUM_THREADS];
-	bool gotOne[NUM_THREADS];
+  boost::thread workerThreads[NUM_THREADS];
+  bool isDone[NUM_THREADS];
+  bool gotOne[NUM_THREADS];
 
-	boost::mutex exMutex;
-	boost::condition_variable todo_signal;
-	boost::condition_variable done_signal;
+  boost::mutex exMutex;
+  boost::condition_variable todo_signal;
+  boost::condition_variable done_signal;
 
-	int nextIndex;
-	int maxIndex;
-	int stepSize;
+  int nextIndex;
+  int maxIndex;
+  int stepSize;
 
-	bool running;
+  bool running;
 
-	boost::function<void(int,int,Running*,int)> callPerIndex;
+  boost::function<void(int, int, Running *, int)> callPerIndex;
 
-	void callPerIndexDefault(int i, int j,Running* k, int tid)
-	{
-		printf("ERROR: should never be called....\n");
-		assert(false);
-	}
+  void callPerIndexDefault(int i, int j, Running *k, int tid) {
+    printf("ERROR: should never be called....\n");
+    assert(false);
+  }
 
-	void workerLoop(int idx)
-	{
-		boost::unique_lock<boost::mutex> lock(exMutex);
+  void workerLoop(int idx) {
+    boost::unique_lock<boost::mutex> lock(exMutex);
 
-		while(running)
-		{
-			// try to get something to do.
-			int todo = 0;
-			bool gotSomething = false;
-			if(nextIndex < maxIndex)
-			{
-				// got something!
-				todo = nextIndex;
-				nextIndex+=stepSize;
-				gotSomething = true;
-			}
+    while (running) {
+      // try to get something to do.
+      int todo = 0;
+      bool gotSomething = false;
+      if (nextIndex < maxIndex) {
+        // got something!
+        todo = nextIndex;
+        nextIndex += stepSize;
+        gotSomething = true;
+      }
 
-			// if got something: do it (unlock in the meantime)
-			if(gotSomething)
-			{
-				lock.unlock();
+      // if got something: do it (unlock in the meantime)
+      if (gotSomething) {
+        lock.unlock();
 
-				assert(callPerIndex != 0);
+        assert(callPerIndex != 0);
 
-				Running s; memset(&s, 0, sizeof(Running));
-				callPerIndex(todo, std::min(todo+stepSize, maxIndex), &s, idx);
-				gotOne[idx] = true;
-				lock.lock();
-				stats += s;
-			}
+        Running s;
+        memset(&s, 0, sizeof(Running));
+        callPerIndex(todo, std::min(todo + stepSize, maxIndex), &s, idx);
+        gotOne[idx] = true;
+        lock.lock();
+        stats += s;
+      }
 
-			// otherwise wait on signal, releasing lock in the meantime.
-			else
-			{
-				if(!gotOne[idx])
-				{
-					lock.unlock();
-					assert(callPerIndex != 0);
-					Running s; memset(&s, 0, sizeof(Running));
-					callPerIndex(0, 0, &s, idx);
-					gotOne[idx] = true;
-					lock.lock();
-					stats += s;
-				}
-				isDone[idx] = true;
-				//printf("worker %d waiting..\n", idx);
-				done_signal.notify_all();
-				todo_signal.wait(lock);
-			}
-		}
-	}
+      // otherwise wait on signal, releasing lock in the meantime.
+      else {
+        if (!gotOne[idx]) {
+          lock.unlock();
+          assert(callPerIndex != 0);
+          Running s;
+          memset(&s, 0, sizeof(Running));
+          callPerIndex(0, 0, &s, idx);
+          gotOne[idx] = true;
+          lock.lock();
+          stats += s;
+        }
+        isDone[idx] = true;
+        // printf("worker %d waiting..\n", idx);
+        done_signal.notify_all();
+        todo_signal.wait(lock);
+      }
+    }
+  }
 };
+
 }

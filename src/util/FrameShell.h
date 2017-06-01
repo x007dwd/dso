@@ -1,6 +1,6 @@
 /**
 * This file is part of DSO.
-* 
+*
 * Copyright 2016 Technical University of Munich and Intel.
 * Developed by Jakob Engel <engelj at in dot tum dot de>,
 * for more information see <http://vision.in.tum.de/dso>.
@@ -21,52 +21,44 @@
 * along with DSO. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
 
-#include "util/NumType.h"
 #include "algorithm"
+#include "util/NumType.h"
 
-namespace dso
-{
+namespace dsio {
 
-
-class FrameShell
-{
+class FrameShell {
 public:
-	int id;						// id in allFrameHistory. All frames that come in.
-	double timestamp;
+  int id; // id in allFrameHistory. All frames that come in.
+  double timestamp;
 
-	// set once after tracking
-	SE3 camToTrackingRef;
-	FrameShell* trackingRef;
+  // set once after tracking
+  SE3 camToTrackingRef;
+  FrameShell *trackingRef;
 
-	// constantly adapted.
-	SE3 camToWorld;				// Write: TRACKING, while frame is still fresh; MAPPING: only when locked [shellPoseMutex].
-	AffLight aff_g2l;
-	bool poseValid;
+  // constantly adapted.
+  SE3 camToWorld; // Write: TRACKING, while frame is still fresh; MAPPING: only
+                  // when locked [shellPoseMutex].
+  AffLight aff_g2l;
+  bool poseValid;
 
-	// statisitcs
-	int statistics_outlierResOnThis;
-	int statistics_goodResOnThis;
-	int marginalizedAt;
-	double movedByOpt;
+  // statisitcs
+  int statistics_outlierResOnThis;
+  int statistics_goodResOnThis;
+  int marginalizedAt;
+  double movedByOpt;
 
-
-	inline FrameShell()
-	{
-		id=0;
-		poseValid=true;
-		camToWorld = SE3();
-		timestamp=0;
-		marginalizedAt=-1;
-		movedByOpt=0;
-		statistics_outlierResOnThis=statistics_goodResOnThis=0;
-		trackingRef=0;
-		camToTrackingRef = SE3();
-	}
+  inline FrameShell() {
+    id = 0;
+    poseValid = true;
+    camToWorld = SE3();
+    timestamp = 0;
+    marginalizedAt = -1;
+    movedByOpt = 0;
+    statistics_outlierResOnThis = statistics_goodResOnThis = 0;
+    trackingRef = 0;
+    camToTrackingRef = SE3();
+  }
 };
-
-
 }
-

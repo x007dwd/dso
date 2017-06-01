@@ -1,6 +1,6 @@
 /**
 * This file is part of DSO.
-* 
+*
 * Copyright 2016 Technical University of Munich and Intel.
 * Developed by Jakob Engel <engelj at in dot tum dot de>,
 * for more information see <http://vision.in.tum.de/dso>.
@@ -21,127 +21,99 @@
 * along with DSO. If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #pragma once
-#include <pangolin/pangolin.h>
+#include "IOWrapper/Output3DWrapper.h"
 #include "boost/thread.hpp"
 #include "util/MinimalImage.h"
-#include "IOWrapper/Output3DWrapper.h"
-#include <map>
 #include <deque>
+#include <map>
+#include <pangolin/pangolin.h>
 
-
-namespace dso
-{
+namespace dsio {
 
 class FrameHessian;
 class CalibHessian;
 class FrameShell;
 
-
-namespace IOWrap
-{
+namespace IOWrap {
 
 class KeyFrameDisplay;
 
-struct GraphConnection
-{
-	KeyFrameDisplay* from;
-	KeyFrameDisplay* to;
-	int fwdMarg, bwdMarg, fwdAct, bwdAct;
+struct GraphConnection {
+  KeyFrameDisplay *from;
+  KeyFrameDisplay *to;
+  int fwdMarg, bwdMarg, fwdAct, bwdAct;
 };
 
-
-class PangolinDSOViewer : public Output3DWrapper
-{
+class PangolinDSOViewer : public Output3DWrapper {
 public:
-	PangolinDSOViewer(int w, int h);
-	virtual ~PangolinDSOViewer();
+  PangolinDSOViewer(int w, int h);
+  virtual ~PangolinDSOViewer();
 
-	void run();
-	void close();
+  void run();
+  void close();
 
-	void addImageToDisplay(std::string name, MinimalImageB3* image);
-	void clearAllImagesToDisplay();
+  void addImageToDisplay(std::string name, MinimalImageB3 *image);
+  void clearAllImagesToDisplay();
 
+  // ==================== Output3DWrapper Functionality ======================
+  virtual void
+  publishGraph(const std::map<long, Eigen::Vector2i> &connectivity);
+  virtual void publishKeyframes(std::vector<FrameHessian *> &frames, bool final,
+                                CalibHessian *HCalib);
+  virtual void publishCamPose(FrameShell *frame, CalibHessian *HCalib);
 
-	// ==================== Output3DWrapper Functionality ======================
-	virtual void publishGraph(const std::map<long,Eigen::Vector2i> &connectivity);
-	virtual void publishKeyframes(
-			std::vector<FrameHessian*> &frames,
-			bool final,
-			CalibHessian* HCalib);
-	virtual void publishCamPose(FrameShell* frame,
-			CalibHessian* HCalib);
+  virtual void pushLiveFrame(FrameHessian *image);
+  virtual void pushDepthImage(MinimalImageB3 *image);
 
+  virtual void join();
 
+  virtual void reset();
 
-	virtual void pushLiveFrame(FrameHessian* image);
-	virtual void pushDepthImage(MinimalImageB3* image);
-
-
-	virtual void join();
-
-	virtual void reset();
 private:
+  bool needReset;
+  void reset_internal();
+  void drawConstraints();
 
-	bool needReset;
-	void reset_internal();
-	void drawConstraints();
+  boost::thread runThread;
+  bool running;
+  int w, h;
 
-	boost::thread runThread;
-	bool running;
-	int w,h;
+  // images rendering
+  boost::mutex openImagesMutex;
+  MinimalImageB3 *internalVideoImg;
+  MinimalImageB3 *internalKFImg;
+  MinimalImageB3 *internalResImg;
+  bool videoImgChanged, kfImgChanged, resImgChanged;
 
+  // 3D model rendering
+  boost::mutex model3DMutex;
+  KeyFrameDisplay *currentCam;
+  std::vector<KeyFrameDisplay *> keyframes;
+  std::vector<Vec3f> allFramePoses;
+  std::map<int, KeyFrameDisplay *> keyframesByKFID;
+  std::vector<GraphConnection> connections;
 
+  // render settings
+  bool settings_showKFCameras;
+  bool settings_showCurrentCamera;
+  bool settings_showTrajectory;
+  bool settings_showFullTrajectory;
+  bool settings_showActiveConstraints;
+  bool settings_showAllConstraints;
 
-	// images rendering
-	boost::mutex openImagesMutex;
-	MinimalImageB3* internalVideoImg;
-	MinimalImageB3* internalKFImg;
-	MinimalImageB3* internalResImg;
-	bool videoImgChanged, kfImgChanged, resImgChanged;
+  float settings_scaledVarTH;
+  float settings_absVarTH;
+  int settings_pointCloudMode;
+  float settings_minRelBS;
+  int settings_sparsity;
 
+  // timings
+  struct timeval last_track;
+  struct timeval last_map;
 
-
-	// 3D model rendering
-	boost::mutex model3DMutex;
-	KeyFrameDisplay* currentCam;
-	std::vector<KeyFrameDisplay*> keyframes;
-	std::vector<Vec3f> allFramePoses;
-	std::map<int, KeyFrameDisplay*> keyframesByKFID;
-	std::vector<GraphConnection> connections;
-
-
-
-	// render settings
-	bool settings_showKFCameras;
-	bool settings_showCurrentCamera;
-	bool settings_showTrajectory;
-	bool settings_showFullTrajectory;
-	bool settings_showActiveConstraints;
-	bool settings_showAllConstraints;
-
-	float settings_scaledVarTH;
-	float settings_absVarTH;
-	int settings_pointCloudMode;
-	float settings_minRelBS;
-	int settings_sparsity;
-
-
-	// timings
-	struct timeval last_track;
-	struct timeval last_map;
-
-
-	std::deque<float> lastNTrackingMs;
-	std::deque<float> lastNMappingMs;
+  std::deque<float> lastNTrackingMs;
+  std::deque<float> lastNMappingMs;
 };
-
-
-
 }
-
-
-
 }

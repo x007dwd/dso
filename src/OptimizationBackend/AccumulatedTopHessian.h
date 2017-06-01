@@ -29,7 +29,7 @@
 #include "vector"
 #include <math.h>
 
-namespace dso {
+namespace dsio {
 
 class EFPoint;
 class EnergyFunctional;
