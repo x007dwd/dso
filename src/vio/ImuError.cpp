@@ -1,4 +1,5 @@
 #include "ImuError.hpp"
+#include "util/NumType.h"
 namespace dsio {
 
 // Construct with measurements and parameters.
@@ -569,9 +570,9 @@ bool ImuError::EvaluateWithMinimalJacobians(double const *const *parameters,
     Eigen::Matrix<double, 15, 1> error;
     error.segment<3>(0) = C_S0_W * delta_p_est_W + acc_doubleintegral_ +
                           F0.block<3, 6>(0, 9) * Delta_b;
-    error.segment<3>(3) = 2 *
-                          (Dq * (T_WS_1.q().inverse() * T_WS_0.q()))
-                              .vec(); // 2*T_WS_0.q()*Dq*T_WS_1.q().inverse();//
+    error.segment<3>(3) =
+        2 * (Dq * (T_WS_1.q().inverse() * T_WS_0.q()))
+                .vec(); // 2*T_WS_0.q()*Dq*T_WS_1.q().inverse();//
     error.segment<3>(6) =
         C_S0_W * delta_v_est_W + acc_integral_ + F0.block<3, 6>(6, 9) * Delta_b;
     error.tail<6>() = speedAndBiases_0.tail<6>() - speedAndBiases_1.tail<6>();
@@ -660,4 +661,4 @@ bool ImuError::EvaluateWithMinimalJacobians(double const *const *parameters,
   }
   return true;
 }
-}
+} // namespace dsio

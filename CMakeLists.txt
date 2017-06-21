@@ -121,7 +121,7 @@ else()
 endif()
 
 SET(VIO_SOURCE
-  # src/vio/ImuError.cpp
+  src/vio/ImuError.cpp
   src/vio/time/Time.cpp
   src/vio/time/Duration.cpp
 )

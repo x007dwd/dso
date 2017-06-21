@@ -511,7 +511,12 @@ Vec4 FullSystem::trackNewCoarse(FrameHessian *fh) {
 
   return Vec4(achievedRes[0], flowVecs[0], flowVecs[1], flowVecs[2]);
 }
-
+/**
+ * 跟踪当前帧fh中的的点
+ * 遍历host帧，帧队列后端处理对象。
+ * @param fh 当前处理帧
+ * @return
+ */
 void FullSystem::traceNewCoarse(FrameHessian *fh) {
   boost::unique_lock<boost::mutex> lock(mapMutex);
 
