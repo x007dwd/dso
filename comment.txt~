@@ -1,0 +1,15 @@
+./build/bin/dso_dataset \
+	files=~/dso/00_1000 \
+	calib=~/dso/00/para/camera.txt \
+	gamma=~/dso/00/para/pcalib.txt \
+	vignette=~/dso/00/para/vignette.png \
+	preset=0 \
+	mode=1
+
+./build/bin/dso_dataset \
+	files=~/dso/05 \
+	calib=~/dso/05/para/camera.txt \
+	gamma=~/dso/05/para/pcalib.txt \
+	vignette=~/dso/05/para/vignette.png \
+	preset=0 \
+	mode=1

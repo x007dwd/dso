@@ -1,0 +1,1 @@
+./bin/dso_dataset files=/home/bobin/data/kiti/00/ calib=/home/bobin/data/kiti/00/para/camera.txt gamma=/home/bobin/data/kiti/00/para/pcalib.txt  vignette=/home/bobin/data/kiti/00/para/vignette.png  preset=0 mode=0
